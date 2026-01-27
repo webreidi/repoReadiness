@@ -80,12 +80,25 @@ Maximum Score: **165 points** (135 base + 30 Copilot Readiness)
 
 ## Usage
 
-### C# Version (Recommended)
+### Running the Tool
 
-Run the enhanced C# assessment tool:
+Build and run the assessment tool:
 
-```compile and run
-dotnet run AssessRepo.cs -- "C:\path\to\your\repository"
+```bash
+# Navigate to the project directory
+cd repoReadiness
+
+# Build the project
+dotnet build
+
+# Assess a repository
+dotnet run -- "C:\path\to\your\repository"
+
+# With verbose output
+dotnet run -- "C:\path\to\your\repository" --verbose
+
+# Assess current directory
+dotnet run -- "."
 ```
 
 ### Manual Assessment

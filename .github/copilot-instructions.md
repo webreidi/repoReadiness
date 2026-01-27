@@ -29,13 +29,30 @@ This is a code quality and GitHub Copilot readiness assessment tool for software
 ### File Structure
 ```
 repoReadiness/
-├── AssessRepo.cs                    # Main assessment tool (C#)
-├── assess-repo.ps1.old              # Legacy PowerShell version
+├── RepoReadiness.csproj             # .NET project file
+├── Program.cs                       # Entry point
+├── Configuration/
+│   └── AssessmentConfig.cs          # Shared state & settings
+├── Models/
+│   └── CategoryFindings.cs          # Data model for findings
+├── Services/
+│   ├── CopilotService.cs            # Copilot CLI integration
+│   └── ReportGenerator.cs           # Report generation
+├── Assessors/
+│   ├── IAssessor.cs                 # Assessor interface
+│   ├── BuildAssessor.cs             # Build capability assessment
+│   ├── RunAssessor.cs               # Run capability assessment
+│   ├── TestAssessor.cs              # Test capability assessment
+│   ├── CodeUnderstandingAssessor.cs # Code quality assessment
+│   ├── DocumentationAssessor.cs     # Documentation assessment
+│   ├── CustomInstructionsAssessor.cs # Copilot instructions assessment
+│   ├── CustomAgentsAssessor.cs      # Custom agents assessment
+│   └── AgentSkillsAssessor.cs       # Agent skills assessment
+├── AssessRepo.cs.old                # Legacy single-file version
 ├── README.md                        # User documentation
 ├── CHANGELOG.md                     # Version history
 ├── INSTRUCTIONS_GUIDE.md            # Guide for creating instructions
 ├── IMPLEMENTATION_SUMMARY.md        # Technical details
-├── repo-readiness-agent.md          # Original assessment criteria
 ├── .github/
 │   └── copilot-instructions.md      # This file
 └── readiness-reports/               # Generated assessment reports
@@ -51,10 +68,12 @@ repoReadiness/
 - **Static fields:** PascalCase (e.g., `Scores`, `Findings`)
 
 ### Code Organization
-- **Single file architecture**: All code in `AssessRepo.cs` (~1000 lines)
-- **Static methods**: All methods are static within `Program` class
-- **Method grouping**: Assessment methods grouped by category
-- **Helper methods**: Placed after main assessment logic (e.g., `AskCopilot`, `EvaluateCopilotUnderstanding`)
+- **Multi-file architecture**: Code organized into folders by responsibility
+- **Configuration/**: Shared state (scores, findings, settings) in `AssessmentConfig.cs`
+- **Models/**: Data classes like `CategoryFindings`
+- **Services/**: Cross-cutting concerns (`CopilotService`, `ReportGenerator`)
+- **Assessors/**: One class per assessment category, all implementing `IAssessor`
+- **Interface-based**: All assessors implement `IAssessor` for consistency
 
 ### Required Patterns
 - **Error handling**: Use `try-catch` for external process calls (Copilot CLI)
@@ -64,31 +83,37 @@ repoReadiness/
 - **String interpolation**: Prefer `$"{variable}"` over concatenation
 - **Regex**: Use compiled or pre-defined patterns for performance
 
-### Method Structure
-Each assessment method follows this pattern:
+### Assessor Structure
+Each assessor class implements `IAssessor` and follows this pattern:
 ```csharp
-static void AssessCategory()
+public class CategoryAssessor : IAssessor
 {
-    // 1. Display progress
-    Console.WriteLine("[X/8] Assessing Category...");
-    
-    // 2. Detect relevant files/configurations
-    var files = Directory.GetFiles(...);
-    
-    // 3. Award points for presence
-    if (files.Any())
-        Scores["Category"] += points;
-    
-    // 4. Analyze content (if Copilot CLI available)
-    if (CopilotAvailable)
+    public string CategoryName => "Category";
+    public int MaxScore => 25;
+
+    public void Assess()
     {
-        string response = AskCopilot("question");
-        // Evaluate and score response
+        // 1. Display progress
+        Console.WriteLine("[X/8] Assessing Category...");
+        
+        // 2. Detect relevant files/configurations
+        var files = Directory.GetFiles(...);
+        
+        // 3. Award points for presence
+        if (files.Any())
+            AssessmentConfig.Scores["Category"] += points;
+        
+        // 4. Analyze content (if Copilot CLI available)
+        if (AssessmentConfig.CopilotAvailable)
+        {
+            string response = CopilotService.AskCopilot("question");
+            // Evaluate and score response
+        }
+        
+        // 5. Record findings
+        AssessmentConfig.Findings["Category"].Strengths.Add("...");
+        AssessmentConfig.Findings["Category"].Recommendations.Add("...");
     }
-    
-    // 5. Record findings
-    Findings["Category"].Strengths.Add("...");
-    Findings["Category"].Recommendations.Add("...");
 }
 ```
 
@@ -154,17 +179,17 @@ When making changes:
 
 ### Manual Test Commands
 ```bash
-# Test compilation
-dotnet run AssessRepo.cs
+# Build the project
+dotnet build
 
 # Test on current directory
-dotnet run AssessRepo.cs -- "."
+dotnet run -- "."
 
 # Test with verbose output
-dotnet run AssessRepo.cs -- "." --verbose
+dotnet run -- "." --verbose
 
 # Test on external repository
-dotnet run AssessRepo.cs -- "C:\path\to\test\repo"
+dotnet run -- "C:\path\to\test\repo"
 ```
 
 ## Assessment Categories & Scoring
@@ -273,50 +298,57 @@ Reports are markdown files with:
 
 ### Adding a New Assessment Category
 
-1. **Add to Scores dictionary** (lines 26-34):
+1. **Create new assessor file** in `Assessors/` folder:
 ```csharp
-{ "NewCategory", 0 }
-```
+// Assessors/NewCategoryAssessor.cs
+using RepoReadiness.Configuration;
+using RepoReadiness.Services;
 
-2. **Add to Findings dictionary** (lines 37-45):
-```csharp
-{ "NewCategory", new CategoryFindings() }
-```
+namespace RepoReadiness.Assessors;
 
-3. **Create assessment method**:
-```csharp
-static void AssessNewCategory()
+public class NewCategoryAssessor : IAssessor
 {
-    Console.WriteLine("[X/Y] Assessing New Category...");
-    // Detection logic
-    // Scoring logic
-    // Copilot testing (if applicable)
-    // Record findings
+    public string CategoryName => "NewCategory";
+    public int MaxScore => 15;
+
+    public void Assess()
+    {
+        Console.WriteLine("[X/Y] Assessing New Category...");
+        // Detection logic
+        // Scoring logic
+        // Copilot testing (if applicable)
+        // Record findings
+    }
 }
 ```
 
-4. **Call from Main()** (after line 110):
+2. **Add to AssessmentConfig.cs** - Scores and Findings dictionaries:
 ```csharp
-AssessNewCategory();
+{ "NewCategory", 0 }
+{ "NewCategory", new CategoryFindings() }
 ```
 
-5. **Update report generation** (line 985+):
+3. **Register in Program.cs** - Add to assessors array:
 ```csharp
-AddCategorySection(sb, "New Category", Scores["NewCategory"], maxPoints, Findings["NewCategory"]);
+var assessors = new IAssessor[]
+{
+    // ... existing assessors
+    new NewCategoryAssessor()
+};
 ```
 
-6. **Update console display** (line 913):
+4. **Update ReportGenerator.cs** - Add to `GetMaxScores()` dictionary:
 ```csharp
-Console.WriteLine($"New Category:              {Scores["NewCategory"]}/{maxPoints}");
+{ "NewCategory", 15 }
 ```
 
-7. **Update max score** in `CalculateGrade()` (line 891)
+5. **Update documentation**: Modify this file and README.md
 
 ### Modifying Copilot Questions
 
-Find the relevant `AskCopilot()` call and update the question string:
+Find the relevant `CopilotService.AskCopilot()` call in the assessor and update the question string:
 ```csharp
-string response = AskCopilot("New question here?");
+string response = CopilotService.AskCopilot("New question here?");
 ```
 
 **Best practices for questions:**
@@ -327,17 +359,17 @@ string response = AskCopilot("New question here?");
 
 ### Adjusting Scoring Thresholds
 
-Locate the category method and modify score assignments:
+Locate the assessor class and modify score assignments:
 ```csharp
 if (condition)
 {
-    Scores["Category"] += 5; // Change this value
+    AssessmentConfig.Scores["Category"] += 5; // Change this value
 }
 ```
 
-Grade thresholds in `CalculateGrade()`:
+Grade thresholds in `ReportGenerator.CalculateGrade()`:
 ```csharp
-if (score >= maxScore * 0.9) return "A"; // 90%
+if (percentage >= 0.9) return "A"; // 90%
 ```
 
 ## Environment Configuration
@@ -354,17 +386,17 @@ The tool requires no configuration files - it's self-contained.
 
 **Basic execution:**
 ```bash
-dotnet run AssessRepo.cs -- "<repo-path>"
+dotnet run -- "<repo-path>"
 ```
 
 **With verbose output:**
 ```bash
-dotnet run AssessRepo.cs -- "<repo-path>" --verbose
+dotnet run -- "<repo-path>" --verbose
 ```
 
 **On current directory:**
 ```bash
-dotnet run AssessRepo.cs -- "."
+dotnet run -- "."
 ```
 
 ### Output Location
@@ -409,6 +441,7 @@ All supporting documentation uses markdown:
 
 ## Version History
 
+- **v2.1** (2026-01-27): Refactored to multi-file .NET project structure
 - **v2.0** (2026-01-27): Content-aware assessment with Copilot understanding tests
 - **v1.0** (2026-01-26): Initial release with 5 core categories
 
@@ -423,13 +456,15 @@ All supporting documentation uses markdown:
 
 When extending or modifying this tool:
 
-1. **Maintain single-file architecture**: Keep all code in `AssessRepo.cs`
-2. **Follow existing patterns**: Use static methods, consistent naming
-3. **Test thoroughly**: Run on multiple repositories
-4. **Update documentation**: Modify this file and README.md
-5. **Update version**: Increment version in report generation
-6. **Maintain scoring balance**: Keep categories proportional (25/20/20/15/10 pattern)
-7. **Consider Copilot CLI optional**: Tool must work without it
+1. **Follow multi-file architecture**: Add new assessors in `Assessors/` folder
+2. **Implement IAssessor interface**: All assessors must implement `IAssessor`
+3. **Use AssessmentConfig**: Access shared state through `AssessmentConfig` class
+4. **Use CopilotService**: Call Copilot CLI through `CopilotService.AskCopilot()`
+5. **Test thoroughly**: Run on multiple repositories with `dotnet run -- "."`
+6. **Update documentation**: Modify this file and README.md
+7. **Update version**: Increment version in `ReportGenerator.cs`
+8. **Maintain scoring balance**: Keep categories proportional (25/20/20/15/10 pattern)
+9. **Consider Copilot CLI optional**: Tool must work without it
 
 ## Tool Philosophy
 

@@ -1,5 +1,67 @@
 # Changelog
 
+## Version 2.1 - Multi-File Project Structure (2026-01-27)
+
+### Major Changes
+
+#### 🏗️ Project Refactoring
+The entire codebase has been refactored from a single `AssessRepo.cs` file into a proper .NET project structure:
+
+```
+repoReadiness/
+├── RepoReadiness.csproj             # .NET project file
+├── Program.cs                       # Entry point
+├── Configuration/
+│   └── AssessmentConfig.cs          # Shared state & settings
+├── Models/
+│   └── CategoryFindings.cs          # Data model
+├── Services/
+│   ├── CopilotService.cs            # Copilot CLI integration
+│   └── ReportGenerator.cs           # Report generation
+└── Assessors/
+    ├── IAssessor.cs                 # Assessor interface
+    ├── BuildAssessor.cs
+    ├── RunAssessor.cs
+    ├── TestAssessor.cs
+    ├── CodeUnderstandingAssessor.cs
+    ├── DocumentationAssessor.cs
+    ├── CustomInstructionsAssessor.cs
+    ├── CustomAgentsAssessor.cs
+    └── AgentSkillsAssessor.cs
+```
+
+#### Key Benefits
+- **Maintainability**: Each assessor is in its own file
+- **Extensibility**: Add new assessors by implementing `IAssessor`
+- **Testability**: Isolated components easier to unit test
+- **Standard .NET**: Uses conventional project structure
+
+### Usage Changes
+
+#### Running the Tool
+```bash
+# Build and run
+dotnet build
+dotnet run -- "C:\\path\\to\\repo"
+
+# With verbose output
+dotnet run -- "C:\\path\\to\\repo" --verbose
+```
+
+#### Adding New Assessors
+1. Create a new file in `Assessors/` implementing `IAssessor`
+2. Add to `Scores` and `Findings` in `AssessmentConfig.cs`
+3. Register in `Program.cs` assessors array
+4. Add max score to `ReportGenerator.GetMaxScores()`
+
+### Technical Changes
+- Reports now saved to `readiness-reports/` in the **tool's directory**, not the assessed repo
+- Shared state moved to `AssessmentConfig` static class
+- Copilot CLI calls centralized in `CopilotService`
+- Report generation moved to `ReportGenerator`
+
+---
+
 ## Version 2.0 - Content-Aware Assessment (2026-01-27)
 
 ### Major Enhancements
@@ -90,11 +152,12 @@ Added `EvaluateCopilotUnderstanding()` method that:
 
 #### Running the Tool
 ```bash
-# C# version (recommended)
-dotnet script AssessRepo.cs -- "C:\path\to\repo"
+# Build and run
+dotnet build
+dotnet run -- "C:\\path\\to\\repo"
 
 # With verbose output to see Copilot responses
-dotnet script AssessRepo.cs -- "C:\path\to\repo" --verbose
+dotnet run -- "C:\\path\\to\\repo" --verbose
 ```
 
 #### Output Example

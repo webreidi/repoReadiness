@@ -252,7 +252,8 @@ Build features according to requirements.
 After creating instructions, run the assessment tool:
 
 ```bash
-dotnet script AssessRepo.cs -- "C:\path\to\your\repo" --verbose
+cd repoReadiness
+dotnet run -- "C:\path\to\your\repo" --verbose
 ```
 
 Look for this output:
@@ -379,7 +380,7 @@ Before committing your instructions:
 Run the assessment tool to see exactly what Copilot understands:
 
 ```bash
-dotnet script AssessRepo.cs -- "." --verbose
+dotnet run -- "." --verbose
 ```
 
 Check the report section:
