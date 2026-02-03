@@ -233,8 +233,9 @@ public static class ReportGenerator
         Console.WriteLine("Base Categories:");
         foreach (var kvp in AssessmentConfig.Scores)
         {
-            var bar = new string('█', kvp.Value * 20 / maxScores[kvp.Key]);
-            var empty = new string('░', 20 - bar.Length);
+            int barLength = Math.Min(20, kvp.Value * 20 / maxScores[kvp.Key]);
+            var bar = new string('█', barLength);
+            var empty = new string('░', 20 - barLength);
             Console.WriteLine($"  {kvp.Key,-20} [{bar}{empty}] {kvp.Value,3}/{maxScores[kvp.Key]}");
         }
 
@@ -247,8 +248,9 @@ public static class ReportGenerator
             var maxBonusScores = GetMaxBonusScores();
             foreach (var kvp in AssessmentConfig.BonusScores.Where(b => b.Value > 0))
             {
-                var bar = new string('█', kvp.Value * 20 / maxBonusScores[kvp.Key]);
-                var empty = new string('░', 20 - bar.Length);
+                int barLength = Math.Min(20, kvp.Value * 20 / maxBonusScores[kvp.Key]);
+                var bar = new string('█', barLength);
+                var empty = new string('░', 20 - barLength);
                 Console.WriteLine($"  {kvp.Key,-20} [{bar}{empty}] +{kvp.Value,2}/{maxBonusScores[kvp.Key]}");
             }
         }
