@@ -1,5 +1,74 @@
 # Changelog
 
+## Version 2.2 - Copilot SDK Migration (2026-01-27)
+
+### Major Changes
+
+#### 🔄 SDK Migration
+Migrated from direct Copilot CLI process invocation to using the official **GitHub Copilot SDK** (`GitHub.Copilot.SDK` NuGet package).
+
+**Old Approach (v2.1 and earlier):**
+```csharp
+// Spawning CLI process for each question
+var process = new Process { FileName = "copilot", Arguments = $"-p \"{question}\"" };
+process.Start();
+```
+
+**New Approach (v2.2):**
+```csharp
+// Using the official SDK with managed client
+using GitHub.Copilot.SDK;
+
+await using var client = new CopilotClient();
+await client.StartAsync();
+await using var session = await client.CreateSessionAsync();
+await session.SendAsync(new MessageOptions { Prompt = question });
+```
+
+#### Key Benefits
+- **Better Resource Management**: Single client instance reused across all assessments
+- **Improved Reliability**: SDK handles connection lifecycle automatically
+- **Event-Based Responses**: Proper async/event handling for responses
+- **Future-Proof**: SDK follows Copilot CLI updates automatically
+
+### Technical Changes
+
+#### Dependencies
+- Added: `GitHub.Copilot.SDK` NuGet package (v0.1.19)
+- Requires: .NET 8.0 or later (unchanged)
+- Requires: GitHub Copilot CLI installed (same as before)
+
+#### CopilotService.cs Rewrite
+- New `InitializeAsync()` method to start the SDK client
+- New `ShutdownAsync()` method for cleanup
+- `AskCopilot()` now uses SDK sessions internally
+- `AskCopilotAsync()` available for async callers
+- Client instance managed as singleton for efficiency
+
+#### Program.cs Updates
+- `Main` is now `async Task Main`
+- Added proper cleanup via `finally` block
+- Version bumped to v2.1 in banner
+
+### Migration Notes
+
+**For Users:**
+- No changes to command-line usage
+- Same arguments: `dotnet run -- "<path>" [--verbose]`
+- Same report format and scoring
+
+**For Contributors:**
+- `CopilotService.AskCopilot()` still available as sync method
+- Async version `AskCopilotAsync()` preferred for new code
+- SDK handles session management automatically
+
+### Requirements
+- GitHub Copilot CLI must still be installed
+- The SDK communicates with CLI in server mode
+- Copilot subscription required (same as before)
+
+---
+
 ## Version 2.1 - Multi-File Project Structure (2026-01-27)
 
 ### Major Changes

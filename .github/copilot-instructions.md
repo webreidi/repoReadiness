@@ -23,7 +23,8 @@ This is a code quality and GitHub Copilot readiness assessment tool for software
 - **No external NuGet packages**: Uses only standard .NET libraries
 
 ### External Tools Integration
-- **GitHub Copilot CLI**: Optional but recommended for content understanding tests
+- **GitHub Copilot SDK**: `GitHub.Copilot.SDK` NuGet package for programmatic Copilot access
+- **GitHub Copilot CLI**: Required by the SDK - communicates via JSON-RPC server mode
 - **Git**: Repository structure detection (not explicitly required)
 
 ### File Structure
@@ -441,6 +442,7 @@ All supporting documentation uses markdown:
 
 ## Version History
 
+- **v2.2** (2026-01-27): Migrated to GitHub Copilot SDK from CLI process spawning
 - **v2.1** (2026-01-27): Refactored to multi-file .NET project structure
 - **v2.0** (2026-01-27): Content-aware assessment with Copilot understanding tests
 - **v1.0** (2026-01-26): Initial release with 5 core categories

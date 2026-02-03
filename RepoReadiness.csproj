@@ -7,4 +7,7 @@
     <RootNamespace>RepoReadiness</RootNamespace>
     <AssemblyName>RepoReadiness</AssemblyName>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="GitHub.Copilot.SDK" Version="0.1.19" />
+  </ItemGroup>
 </Project>

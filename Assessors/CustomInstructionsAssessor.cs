@@ -6,14 +6,17 @@ using RepoReadiness.Services;
 
 namespace RepoReadiness.Assessors;
 
+/// <summary>
+/// Assesses custom instructions - these directly tell Copilot how to behave in this repo.
+/// </summary>
 public class CustomInstructionsAssessor : IAssessor
 {
     public string CategoryName => "CustomInstructions";
-    public int MaxScore => 15;
+    public int MaxScore => 20;
 
     public void Assess()
     {
-        Console.WriteLine("[6/8] Assessing Custom Instructions...");
+        Console.WriteLine("[6/10] Assessing Custom Instructions...");
 
         var instructionPaths = new[]
         {
@@ -26,21 +29,30 @@ public class CustomInstructionsAssessor : IAssessor
 
         if (foundPath != null)
         {
-            AssessmentConfig.Scores["CustomInstructions"] += 3;
+            AssessmentConfig.Scores["CustomInstructions"] += 4;
             AssessmentConfig.Findings["CustomInstructions"].Strengths.Add($"Custom instructions file found: {Path.GetFileName(foundPath)}");
 
             var content = File.ReadAllText(foundPath);
             var lines = content.Split('\n').Length;
 
-            // Content length scoring
-            if (lines >= 50)
+            // Content length scoring - comprehensive instructions are more valuable
+            if (lines >= 100)
+            {
+                AssessmentConfig.Scores["CustomInstructions"] += 3;
+                AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Comprehensive instructions (100+ lines)");
+            }
+            else if (lines >= 50)
             {
                 AssessmentConfig.Scores["CustomInstructions"] += 2;
-                AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Comprehensive instructions content");
+                AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Good instruction coverage");
             }
 
-            // Check for key sections
-            var keySections = new[] { "coding standards", "naming", "testing", "security", "architecture" };
+            // Check for key sections - expanded list
+            var keySections = new[] 
+            { 
+                "coding standards", "naming", "testing", "security", "architecture",
+                "error handling", "logging", "dependencies", "patterns", "style"
+            };
             int sectionsFound = 0;
             foreach (var section in keySections)
             {
@@ -48,9 +60,21 @@ public class CustomInstructionsAssessor : IAssessor
                     sectionsFound++;
             }
 
-            AssessmentConfig.Scores["CustomInstructions"] += Math.Min(sectionsFound, 5);
-            if (sectionsFound >= 3)
-                AssessmentConfig.Findings["CustomInstructions"].Strengths.Add($"Covers {sectionsFound} key topics");
+            int sectionScore = Math.Min(sectionsFound, 6);
+            AssessmentConfig.Scores["CustomInstructions"] += sectionScore;
+            if (sectionsFound >= 5)
+                AssessmentConfig.Findings["CustomInstructions"].Strengths.Add($"Covers {sectionsFound} key topics (coding standards, naming, etc.)");
+            else if (sectionsFound >= 3)
+                AssessmentConfig.Findings["CustomInstructions"].Strengths.Add($"Covers {sectionsFound} topics");
+            else
+                AssessmentConfig.Findings["CustomInstructions"].Recommendations.Add("Add more sections: coding standards, naming, testing, security, error handling");
+
+            // Check for code examples in instructions
+            if (content.Contains("```"))
+            {
+                AssessmentConfig.Scores["CustomInstructions"] += 2;
+                AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Includes code examples");
+            }
 
             // Copilot understanding test
             if (AssessmentConfig.CopilotAvailable)
@@ -69,6 +93,7 @@ public class CustomInstructionsAssessor : IAssessor
         {
             AssessmentConfig.Findings["CustomInstructions"].Weaknesses.Add("No custom instructions file found");
             AssessmentConfig.Findings["CustomInstructions"].Recommendations.Add("Create .github/copilot-instructions.md with project-specific guidance");
+            AssessmentConfig.Findings["CustomInstructions"].Recommendations.Add("Include: coding standards, naming conventions, testing practices, security guidelines");
         }
     }
 }

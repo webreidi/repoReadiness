@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using RepoReadiness.Assessors;
 using RepoReadiness.Configuration;
 using RepoReadiness.Services;
@@ -9,11 +10,11 @@ namespace RepoReadiness;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         Console.WriteLine();
         Console.WriteLine("╔═══════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║     Repository Readiness Assessment Tool v2.0             ║");
+        Console.WriteLine("║     Repository Readiness Assessment Tool v3.0             ║");
         Console.WriteLine("║     GitHub Copilot Optimization Analyzer                  ║");
         Console.WriteLine("╚═══════════════════════════════════════════════════════════╝");
         Console.WriteLine();
@@ -37,13 +38,13 @@ class Program
         Console.WriteLine($"Assessing: {AssessmentConfig.RepoPath}");
         Console.WriteLine();
 
-        // Check Copilot availability
-        Console.Write("Checking Copilot CLI availability... ");
+        // Check Copilot availability (this also initializes the SDK client)
+        Console.Write("Checking Copilot SDK availability... ");
         AssessmentConfig.CopilotAvailable = CopilotService.CheckAvailability();
         if (AssessmentConfig.CopilotAvailable)
         {
             Console.WriteLine("Available ✓");
-            Console.WriteLine("  (Enhanced assessment with content understanding tests)");
+            Console.WriteLine("  (Enhanced assessment with content understanding tests using Copilot SDK)");
         }
         else
         {
@@ -52,39 +53,53 @@ class Program
         }
         Console.WriteLine();
 
-        // Run assessors
-        var assessors = new IAssessor[]
+        try
         {
-            new BuildAssessor(),
-            new RunAssessor(),
-            new TestAssessor(),
-            new CodeUnderstandingAssessor(),
-            new DocumentationAssessor(),
-            new CustomInstructionsAssessor(),
-            new CustomAgentsAssessor(),
-            new AgentSkillsAssessor()
-        };
+            // Run assessors - 8 base categories + 2 bonus categories
+            var assessors = new IAssessor[]
+            {
+                new BuildAssessor(),
+                new RunAssessor(),
+                new TestAssessor(),
+                new CodeQualityAssessor(),
+                new DocumentationAssessor(),
+                new CustomInstructionsAssessor(),
+                new TypeSafetyAssessor(),
+                new ContextFriendlinessAssessor(),
+                // Bonus assessors (don't affect base grade)
+                new CustomAgentsAssessor(),
+                new AgentSkillsAssessor()
+            };
 
-        foreach (var assessor in assessors)
-        {
-            try
+            foreach (var assessor in assessors)
             {
-                assessor.Assess();
+                try
+                {
+                    assessor.Assess();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"  Warning: Error in {assessor.CategoryName}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+
+            // Display summary
+            ReportGenerator.DisplaySummary();
+
+            // Generate report
+            var repoName = new DirectoryInfo(AssessmentConfig.RepoPath).Name;
+            ReportGenerator.GenerateReport(repoName);
+
+            Console.WriteLine("Assessment complete!");
+        }
+        finally
+        {
+            // Cleanup Copilot SDK client
+            if (AssessmentConfig.CopilotAvailable)
             {
-                Console.WriteLine($"  Warning: Error in {assessor.CategoryName}: {ex.Message}");
+                await CopilotService.ShutdownAsync();
             }
         }
-
-        // Display summary
-        ReportGenerator.DisplaySummary();
-
-        // Generate report
-        var repoName = new DirectoryInfo(AssessmentConfig.RepoPath).Name;
-        ReportGenerator.GenerateReport(repoName);
-
-        Console.WriteLine("Assessment complete!");
     }
 
     static void ShowUsage()
@@ -97,6 +112,10 @@ class Program
         Console.WriteLine("Options:");
         Console.WriteLine("  --verbose, -v        Show detailed output during assessment");
         Console.WriteLine("  --help, -h           Show this help message");
+        Console.WriteLine();
+        Console.WriteLine("Scoring (v3.0):");
+        Console.WriteLine("  Base Score:  150 points max (determines grade)");
+        Console.WriteLine("  Bonus:       +10 points max (Custom Agents, Agent Skills)");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  dotnet run -- .");

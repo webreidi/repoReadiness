@@ -14,7 +14,7 @@ public class TestAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[3/8] Assessing Test Capability...");
+        Console.WriteLine("[3/10] Assessing Test Capability...");
 
         // Check for test frameworks
         var testIndicators = new Dictionary<string, string>

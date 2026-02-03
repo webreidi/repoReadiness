@@ -7,14 +7,18 @@ using RepoReadiness.Services;
 
 namespace RepoReadiness.Assessors;
 
+/// <summary>
+/// Assesses agent skills - awards BONUS points (not part of base score).
+/// Agent skills enhance Copilot but aren't required for it to work well.
+/// </summary>
 public class AgentSkillsAssessor : IAssessor
 {
     public string CategoryName => "AgentSkills";
-    public int MaxScore => 10;
+    public int MaxScore => 5; // Bonus points
 
     public void Assess()
     {
-        Console.WriteLine("[8/8] Assessing Agent Skills...");
+        Console.WriteLine("[10/10] Assessing Agent Skills (Bonus)...");
 
         var skillIndicators = new[] { "SKILL.md", "skill.yaml", "skill.yml", "*.skill.md" };
         var foundSkills = new List<string>();
@@ -34,8 +38,8 @@ public class AgentSkillsAssessor : IAssessor
         var skillsDir = Path.Combine(AssessmentConfig.RepoPath, ".copilot", "skills");
         if (Directory.Exists(skillsDir))
         {
-            AssessmentConfig.Scores["AgentSkills"] += 2;
-            AssessmentConfig.Findings["AgentSkills"].Strengths.Add("Skills directory found: .copilot/skills/");
+            AssessmentConfig.BonusScores["AgentSkills"] += 2;
+            AssessmentConfig.Findings["AgentSkills"].Strengths.Add("Skills directory found: .copilot/skills/ (+2 bonus)");
 
             try
             {
@@ -49,37 +53,42 @@ public class AgentSkillsAssessor : IAssessor
 
         if (foundSkills.Any())
         {
+            // +2 for skill definitions found (if not already awarded for directory)
+            if (AssessmentConfig.BonusScores["AgentSkills"] == 0)
+            {
+                AssessmentConfig.BonusScores["AgentSkills"] += 2;
+            }
             AssessmentConfig.Findings["AgentSkills"].Strengths.Add($"Found {foundSkills.Count} skill definition(s)");
 
-            foreach (var skill in foundSkills.Take(3))
+            // +2 for documented skills (check first one)
+            foreach (var skill in foundSkills.Take(1))
             {
                 try
                 {
                     var content = File.ReadAllText(skill);
                     if (content.Length > 100)
                     {
-                        AssessmentConfig.Scores["AgentSkills"] += 2;
-                        AssessmentConfig.Findings["AgentSkills"].Strengths.Add($"Documented skill: {Path.GetFileName(skill)}");
+                        AssessmentConfig.BonusScores["AgentSkills"] += 2;
+                        AssessmentConfig.Findings["AgentSkills"].Strengths.Add($"Documented skill: {Path.GetFileName(skill)} (+2 bonus)");
                     }
                 }
                 catch { }
             }
 
-            // Copilot identification test
+            // +1 for Copilot identification
             if (AssessmentConfig.CopilotAvailable)
             {
                 string response = CopilotService.AskCopilot("What specialized skills are configured in this repository? Describe what each skill does.");
                 if (!string.IsNullOrWhiteSpace(response) && !response.StartsWith("Error") && response.Length > 50)
                 {
-                    AssessmentConfig.Scores["AgentSkills"] += 4;
-                    AssessmentConfig.Findings["AgentSkills"].Strengths.Add("Copilot identifies available skills");
+                    AssessmentConfig.BonusScores["AgentSkills"] += 1;
+                    AssessmentConfig.Findings["AgentSkills"].Strengths.Add("Copilot identifies available skills (+1 bonus)");
                 }
             }
         }
         else
         {
-            AssessmentConfig.Findings["AgentSkills"].Weaknesses.Add("No agent skills found");
-            AssessmentConfig.Findings["AgentSkills"].Recommendations.Add("Consider creating skills for reusable operations (API calls, code generation templates)");
+            AssessmentConfig.Findings["AgentSkills"].Recommendations.Add("Consider creating skills for reusable operations (optional, awards bonus points)");
         }
     }
 }

@@ -9,11 +9,11 @@ namespace RepoReadiness.Assessors;
 public class BuildAssessor : IAssessor
 {
     public string CategoryName => "Build";
-    public int MaxScore => 25;
+    public int MaxScore => 20;
 
     public void Assess()
     {
-        Console.WriteLine("[1/8] Assessing Build Capability...");
+        Console.WriteLine("[1/10] Assessing Build Capability...");
 
         var buildPatterns = new[] { "*.csproj", "*.sln", "package.json", "Cargo.toml", "pom.xml", "build.gradle", "Makefile", "CMakeLists.txt" };
         bool hasBuildConfig = false;
@@ -50,7 +50,7 @@ public class BuildAssessor : IAssessor
             if (content.Contains("build", StringComparison.OrdinalIgnoreCase) ||
                 content.Contains("compile", StringComparison.OrdinalIgnoreCase))
             {
-                AssessmentConfig.Scores["Build"] += 5;
+                AssessmentConfig.Scores["Build"] += 4;
                 AssessmentConfig.Findings["Build"].Strengths.Add("README contains build instructions");
             }
             else
@@ -66,7 +66,7 @@ public class BuildAssessor : IAssessor
             var fullPath = Path.Combine(AssessmentConfig.RepoPath, ciPath);
             if (Directory.Exists(fullPath) || File.Exists(fullPath))
             {
-                AssessmentConfig.Scores["Build"] += 5;
+                AssessmentConfig.Scores["Build"] += 4;
                 AssessmentConfig.Findings["Build"].Strengths.Add($"CI/CD configuration found: {ciPath}");
                 break;
             }
@@ -78,7 +78,7 @@ public class BuildAssessor : IAssessor
         {
             if (File.Exists(Path.Combine(AssessmentConfig.RepoPath, script)))
             {
-                AssessmentConfig.Scores["Build"] += 5;
+                AssessmentConfig.Scores["Build"] += 3;
                 AssessmentConfig.Findings["Build"].Strengths.Add($"Build script found: {script}");
                 break;
             }
@@ -92,7 +92,7 @@ public class BuildAssessor : IAssessor
             {
                 var sourceContent = hasBuildConfig && detectedBuildFile != null ? detectedBuildFile : "";
                 int understanding = CopilotService.EvaluateCopilotUnderstanding(response, sourceContent);
-                AssessmentConfig.Scores["Build"] += Math.Min(understanding, 5);
+                AssessmentConfig.Scores["Build"] += Math.Min(understanding, 4);
                 if (understanding >= 3)
                     AssessmentConfig.Findings["Build"].Strengths.Add("Copilot understands the build process");
             }

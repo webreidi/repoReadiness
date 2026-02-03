@@ -1,64 +1,103 @@
-# GitHub Copilot CLI Integration
+# GitHub Copilot SDK Integration
 
 ## Overview
 
-The Repository Readiness Assessment script now integrates with GitHub Copilot CLI to perform actual evaluations of repository capabilities.
+The Repository Readiness Assessment tool integrates with **GitHub Copilot SDK** (`GitHub.Copilot.SDK`) to perform actual evaluations of repository capabilities. As of v2.2, the tool uses the official .NET SDK instead of directly spawning CLI processes.
 
-## What Changed
+## Architecture
 
-### 1. **Copilot CLI Detection**
-- Script checks if `copilot` command is installed (standalone Copilot CLI)
-- Provides installation instructions if not found
-- Falls back to basic analysis if unavailable
-
-### 2. **Ask-Copilot Helper Function**
-Added a helper function that queries Copilot CLI:
-```powershell
-function Ask-Copilot {
-    param([string]$Question, [int]$MaxRetries = 1)
-    # Queries: copilot -p "$Question"
-}
+```
+┌─────────────────────────────────────────────┐
+│          RepoReadiness Tool                 │
+│                                             │
+│  ┌─────────────┐    ┌──────────────────┐   │
+│  │  Assessors  │───▶│  CopilotService  │   │
+│  └─────────────┘    └────────┬─────────┘   │
+│                              │              │
+│                   ┌──────────▼─────────┐   │
+│                   │ GitHub.Copilot.SDK │   │
+│                   └──────────┬─────────┘   │
+└──────────────────────────────│──────────────┘
+                               │ JSON-RPC
+                    ┌──────────▼─────────┐
+                    │   Copilot CLI      │
+                    │  (Server Mode)     │
+                    └────────────────────┘
 ```
 
-### 3. **Build Capability Assessment**
-- Asks Copilot: "How do I build this project?"
-- Attempts to identify build commands using Copilot's understanding
+## What Changed in v2.2
+
+### SDK Migration
+**Old Approach (v2.1 and earlier):**
+```csharp
+// Spawning CLI process for each question
+var process = new Process { FileName = "copilot", Arguments = $"-p \"{question}\"" };
+process.Start();
+string output = process.StandardOutput.ReadToEnd();
+```
+
+**New Approach (v2.2+):**
+```csharp
+// Using the official SDK
+using GitHub.Copilot.SDK;
+
+// Single client instance managed per assessment
+await using var client = new CopilotClient();
+await client.StartAsync();
+
+// Create session and send message
+await using var session = await client.CreateSessionAsync(new SessionConfig());
+await session.SendAsync(new MessageOptions { Prompt = question });
+```
+
+### 1. **CopilotService Rewrite**
+- `InitializeAsync()` - Initializes the SDK client once
+- `ShutdownAsync()` - Cleans up resources properly
+- `AskCopilot()` / `AskCopilotAsync()` - Uses SDK sessions
+- `EvaluateCopilotUnderstanding()` - Unchanged, evaluates response quality
+
+### 2. **Build Capability Assessment**
+- Asks Copilot: "What is the exact command to install dependencies and build this project?"
+- Uses SDK session to get response
 - Adds bonus points if Copilot successfully identifies the build approach
-- Stores Copilot's suggestions in the report
 
-### 4. **Run Capability Assessment**
-- Asks Copilot: "How do I run this project after building it?"
+### 3. **Run Capability Assessment**
+- Asks Copilot: "What is the exact command to run or start this application?"
 - Evaluates if Copilot can understand the application entry point
-- Awards additional points if Copilot can assist with running
-- Includes run command suggestions in the report
+- Awards additional points for accurate responses
 
-### 5. **Test Capability Assessment**
-- Asks Copilot: "How do I run tests for this project?"
+### 4. **Test Capability Assessment**
+- Asks Copilot: "What is the exact command to run the test suite?"
 - Checks if Copilot can identify the test execution method
-- Provides bonus points when Copilot successfully identifies testing approach
-- Documents Copilot's test execution suggestions
+- Provides bonus points for correct test command identification
 
-### 6. **Enhanced Report Output**
-Each assessment section now includes:
-- **Copilot Analysis** - Shows what Copilot suggested for build/run/test
-- Demonstrates whether Copilot can effectively work with the repository
-- Provides actual commands that Copilot recommends
+### 5. **Custom Instructions Assessment**
+- Asks Copilot: "Based on the custom instructions, what are the 3 most important coding standards?"
+- Tests whether Copilot actually understands the project-specific guidance
+
+### 6. **Custom Agents Assessment**
+- Asks Copilot: "What specialized agents are available in this repository?"
+- Validates Copilot recognizes configured agents
+
+### 7. **Agent Skills Assessment**
+- Asks Copilot: "What specialized skills are configured?"
+- Confirms Copilot identifies available skill modules
 
 ## Prerequisites
 
 ### Install Copilot CLI
 
-**Option 1: Install standalone Copilot CLI (Recommended)**
+The SDK requires the Copilot CLI to be installed. It communicates with the CLI running in server mode.
+
+**Install standalone Copilot CLI:**
 ```powershell
-# Visit: https://github.com/cli/cli/releases
-# Download and install the latest Copilot CLI
+# Visit: https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli
+# Follow instructions for your platform
 ```
 
-**Option 2: Use via GitHub CLI**
+### Verify Installation
 ```powershell
-# If you already have GitHub CLI installed:
-gh copilot
-# This will launch the standalone Copilot CLI
+copilot --version
 ```
 
 ### Authenticate
@@ -69,50 +108,74 @@ copilot
 
 ## Benefits
 
-1. **Real-World Testing**: Actually asks Copilot to perform the tasks being evaluated
-2. **Practical Feedback**: Shows developers exactly what Copilot suggests for their repo
-3. **Actionable Insights**: Copilot's suggestions become part of the report
-4. **Validation**: Proves whether Copilot can understand the repository structure
-5. **Graceful Degradation**: Works without Copilot CLI but provides enhanced analysis when available
+1. **Better Resource Management**: Single client instance reused across all assessments
+2. **Improved Reliability**: SDK handles connection lifecycle automatically
+3. **Event-Based Responses**: Proper async/event handling for responses
+4. **Future-Proof**: SDK follows Copilot CLI updates automatically
+5. **Cleaner Code**: No manual process spawning or output parsing
+6. **Graceful Degradation**: Still works without Copilot CLI (basic analysis only)
 
-## Report Changes
+## Configuration
 
-Reports now include **Copilot Analysis** sections showing:
-- Build commands Copilot suggests
-- Run commands Copilot recommends  
-- Test execution approaches Copilot identifies
+The SDK client is configured in `CopilotService.cs`:
 
-Example:
-```markdown
-### 1. Build Capability: 15/25
+```csharp
+_client = new CopilotClient(new CopilotClientOptions
+{
+    Cwd = AssessmentConfig.RepoPath,  // Working directory
+    AutoStart = true,                  // Auto-start CLI server
+    LogLevel = VerboseMode ? "debug" : "error"
+});
+```
 
-**Strengths:**
-- Build configuration files found: package.json
-- Copilot successfully identified build approach
+Sessions are configured to disable tools (for faster responses):
 
-**Copilot Analysis:**
-Copilot Build Suggestion:
-npm install
-npm run build
+```csharp
+await using var session = await _client.CreateSessionAsync(new SessionConfig
+{
+    InfiniteSessions = new InfiniteSessionConfig { Enabled = false },
+    ExcludedTools = new[] { "*" }  // Disable all tools for simple Q&A
+});
 ```
 
 ## Usage
 
-Same as before, but now leverages Copilot:
+Same as before:
 ```powershell
-.\assess-repo.ps1 -RepoPath "C:\path\to\repo"
+dotnet run -- "C:\path\to\repo"
+dotnet run -- "C:\path\to\repo" --verbose
 ```
 
-The script automatically:
-1. Detects if Copilot CLI is available
-2. Uses Copilot for enhanced analysis when possible
-3. Falls back to traditional analysis if unavailable
-4. Stores all reports in `readiness-reports/` folder
+The tool automatically:
+1. Initializes the Copilot SDK client
+2. Uses SDK sessions for enhanced analysis
+3. Cleans up the client when complete
+4. Falls back to basic analysis if SDK unavailable
 
-## Future Enhancements
+## Troubleshooting
 
-Potential improvements:
-- Ask Copilot to explain code structure
-- Use Copilot to evaluate documentation quality
-- Request Copilot's assessment of code organization
-- Have Copilot suggest specific improvements
+### SDK Not Available
+```
+Checking Copilot SDK availability... Not available
+  (Install GitHub Copilot CLI for enhanced assessment)
+```
+**Solution:** Install and authenticate the Copilot CLI.
+
+### Connection Errors
+If the SDK fails to connect, check:
+1. Copilot CLI is in PATH: `copilot --version`
+2. You're authenticated: `copilot` (interactive)
+3. Network connectivity to GitHub services
+
+### Verbose Mode
+Use `--verbose` to see detailed SDK communication:
+```powershell
+dotnet run -- "." --verbose
+```
+
+## SDK Documentation
+
+For more details on the Copilot SDK:
+- [GitHub Copilot SDK Repository](https://github.com/github/copilot-sdk)
+- [.NET SDK Documentation](https://github.com/github/copilot-sdk/blob/main/dotnet/README.md)
+- [Getting Started Guide](https://github.com/github/copilot-sdk/blob/main/docs/getting-started.md)
