@@ -71,7 +71,7 @@ public class CodeComplexityAssessor : IAssessor
         var complexityScores = new List<int>();
         int analyzedMethods = 0;
 
-        // Sample up to 20 files for performance
+        // Sample up to 20 files for performance (balances coverage with assessment speed)
         foreach (var file in codeFiles.Take(20))
         {
             try
@@ -153,7 +153,7 @@ public class CodeComplexityAssessor : IAssessor
                 end = i;
             }
             
-            if (end > start && end < content.Length)
+            if (end > start && end < content.Length - 1)
             {
                 methods.Add(content.Substring(match.Index, end - match.Index + 1));
             }
@@ -304,10 +304,10 @@ public class CodeComplexityAssessor : IAssessor
                 
                 foreach (var import in imports)
                 {
-                    // Check if import refers to another file in the codebase
+                    // Check if import refers to another file in the codebase (exact match on base name)
                     var referencedFile = codeFiles.FirstOrDefault(f => 
-                        Path.GetFileNameWithoutExtension(f).Contains(import) || 
-                        f.Contains(import.Replace(".", "/")));
+                        Path.GetFileNameWithoutExtension(f).Equals(import, StringComparison.OrdinalIgnoreCase) || 
+                        f.EndsWith(import.Replace(".", "/") + Path.GetExtension(file), StringComparison.OrdinalIgnoreCase));
                     
                     if (referencedFile != null)
                     {
@@ -451,10 +451,12 @@ public class CodeComplexityAssessor : IAssessor
 
         foreach (var neighbor in graph[node])
         {
-            int depth = CalculateMaxDepth(neighbor, graph, new HashSet<string>(visited));
+            int depth = CalculateMaxDepth(neighbor, graph, visited);
             maxDepth = Math.Max(maxDepth, depth);
         }
 
+        // Backtrack to allow this node to be visited in other paths
+        visited.Remove(node);
         return maxDepth + 1;
     }
 }

@@ -189,7 +189,7 @@ public static class ReportGenerator
 
     private static int CalculateMaxScore()
     {
-        return GetMaxScores().Values.Sum(); // 175 base
+        return GetMaxScores().Values.Sum(); // Sum of all base category max scores
     }
 
     private static int CalculateMaxBonus()
