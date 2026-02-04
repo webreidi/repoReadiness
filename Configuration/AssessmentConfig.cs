@@ -10,13 +10,14 @@ public static class AssessmentConfig
     public static bool CopilotAvailable { get; set; } = false;
     public static string RepoPath { get; set; } = "";
 
-    // Base scores (150 points max)
+    // Base scores (175 points max)
     public static Dictionary<string, int> Scores { get; } = new()
     {
         { "Build", 0 },
         { "Run", 0 },
         { "Test", 0 },
         { "CodeQuality", 0 },
+        { "CodeComplexity", 0 },
         { "Documentation", 0 },
         { "CustomInstructions", 0 },
         { "TypeSafety", 0 },
@@ -36,6 +37,7 @@ public static class AssessmentConfig
         { "Run", new CategoryFindings() },
         { "Test", new CategoryFindings() },
         { "CodeQuality", new CategoryFindings() },
+        { "CodeComplexity", new CategoryFindings() },
         { "Documentation", new CategoryFindings() },
         { "CustomInstructions", new CategoryFindings() },
         { "TypeSafety", new CategoryFindings() },

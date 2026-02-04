@@ -14,7 +14,7 @@ class Program
     {
         Console.WriteLine();
         Console.WriteLine("╔═══════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║     Repository Readiness Assessment Tool v3.0             ║");
+        Console.WriteLine("║     Repository Readiness Assessment Tool v3.1             ║");
         Console.WriteLine("║     GitHub Copilot Optimization Analyzer                  ║");
         Console.WriteLine("╚═══════════════════════════════════════════════════════════╝");
         Console.WriteLine();
@@ -55,13 +55,14 @@ class Program
 
         try
         {
-            // Run assessors - 8 base categories + 2 bonus categories
+            // Run assessors - 9 base categories + 2 bonus categories
             var assessors = new IAssessor[]
             {
                 new BuildAssessor(),
                 new RunAssessor(),
                 new TestAssessor(),
                 new CodeQualityAssessor(),
+                new CodeComplexityAssessor(),
                 new DocumentationAssessor(),
                 new CustomInstructionsAssessor(),
                 new TypeSafetyAssessor(),
@@ -113,8 +114,8 @@ class Program
         Console.WriteLine("  --verbose, -v        Show detailed output during assessment");
         Console.WriteLine("  --help, -h           Show this help message");
         Console.WriteLine();
-        Console.WriteLine("Scoring (v3.0):");
-        Console.WriteLine("  Base Score:  150 points max (determines grade)");
+        Console.WriteLine("Scoring (v3.1):");
+        Console.WriteLine("  Base Score:  175 points max (determines grade)");
         Console.WriteLine("  Bonus:       +10 points max (Custom Agents, Agent Skills)");
         Console.WriteLine();
         Console.WriteLine("Examples:");

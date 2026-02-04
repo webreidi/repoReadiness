@@ -13,7 +13,7 @@ public class BuildAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[1/10] Assessing Build Capability...");
+        Console.WriteLine("[1/11] Assessing Build Capability...");
 
         var buildPatterns = new[] { "*.csproj", "*.sln", "package.json", "Cargo.toml", "pom.xml", "build.gradle", "Makefile", "CMakeLists.txt" };
         bool hasBuildConfig = false;

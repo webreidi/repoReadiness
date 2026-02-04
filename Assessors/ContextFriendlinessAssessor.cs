@@ -17,7 +17,7 @@ public class ContextFriendlinessAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[8/10] Assessing Context Friendliness...");
+        Console.WriteLine("[9/11] Assessing Context Friendliness...");
 
         // Check average file size
         var codeExtensions = new[] { ".cs", ".js", ".ts", ".py", ".java", ".go", ".rs", ".tsx", ".jsx" };

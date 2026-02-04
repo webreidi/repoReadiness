@@ -16,7 +16,7 @@ public class TypeSafetyAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[7/10] Assessing Type Safety...");
+        Console.WriteLine("[8/11] Assessing Type Safety...");
 
         bool hasTyping = false;
         bool hasStrictMode = false;

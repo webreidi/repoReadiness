@@ -18,7 +18,7 @@ public class CodeQualityAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[4/10] Assessing Code Quality...");
+        Console.WriteLine("[4/11] Assessing Code Quality...");
 
         // Check directory structure (not too flat, not too deep)
         var allDirs = Directory.GetDirectories(AssessmentConfig.RepoPath, "*", SearchOption.AllDirectories)

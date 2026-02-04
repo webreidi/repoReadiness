@@ -18,7 +18,7 @@ public class CustomAgentsAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[9/10] Assessing Custom Agents (Bonus)...");
+        Console.WriteLine("[10/11] Assessing Custom Agents (Bonus)...");
 
         var agentPatterns = new[] { "*.agent.md", "*.agent.yaml", "*.agent.yml" };
         var foundAgents = new List<string>();
