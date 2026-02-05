@@ -12,7 +12,7 @@ namespace RepoReadiness.Assessors;
 public class CustomInstructionsAssessor : IAssessor
 {
     public string CategoryName => "CustomInstructions";
-    public int MaxScore => 20;
+    public int MaxScore => 10;
 
     public void Assess()
     {
@@ -29,25 +29,25 @@ public class CustomInstructionsAssessor : IAssessor
 
         if (foundPath != null)
         {
-            AssessmentConfig.Scores["CustomInstructions"] += 4;
+            AssessmentConfig.Scores["CustomInstructions"] += 2;
             AssessmentConfig.Findings["CustomInstructions"].Strengths.Add($"Custom instructions file found: {Path.GetFileName(foundPath)}");
 
             var content = File.ReadAllText(foundPath);
             var lines = content.Split('\n').Length;
 
-            // Content length scoring - comprehensive instructions are more valuable
+            // Content length scoring - scaled for max 10 points
             if (lines >= 100)
             {
-                AssessmentConfig.Scores["CustomInstructions"] += 3;
+                AssessmentConfig.Scores["CustomInstructions"] += 2;
                 AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Comprehensive instructions (100+ lines)");
             }
             else if (lines >= 50)
             {
-                AssessmentConfig.Scores["CustomInstructions"] += 2;
+                AssessmentConfig.Scores["CustomInstructions"] += 1;
                 AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Good instruction coverage");
             }
 
-            // Check for key sections - expanded list
+            // Check for key sections - scaled down
             var keySections = new[] 
             { 
                 "coding standards", "naming", "testing", "security", "architecture",
@@ -60,7 +60,7 @@ public class CustomInstructionsAssessor : IAssessor
                     sectionsFound++;
             }
 
-            int sectionScore = Math.Min(sectionsFound, 6);
+            int sectionScore = Math.Min(sectionsFound, 3);
             AssessmentConfig.Scores["CustomInstructions"] += sectionScore;
             if (sectionsFound >= 5)
                 AssessmentConfig.Findings["CustomInstructions"].Strengths.Add($"Covers {sectionsFound} key topics (coding standards, naming, etc.)");
@@ -72,7 +72,7 @@ public class CustomInstructionsAssessor : IAssessor
             // Check for code examples in instructions
             if (content.Contains("```"))
             {
-                AssessmentConfig.Scores["CustomInstructions"] += 2;
+                AssessmentConfig.Scores["CustomInstructions"] += 1;
                 AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Includes code examples");
             }
 
@@ -83,8 +83,8 @@ public class CustomInstructionsAssessor : IAssessor
                 if (!string.IsNullOrWhiteSpace(response) && !response.StartsWith("Error"))
                 {
                     int understanding = CopilotService.EvaluateCopilotUnderstanding(response, content);
-                    AssessmentConfig.Scores["CustomInstructions"] += Math.Min(understanding, 5);
-                    if (understanding >= 4)
+                    AssessmentConfig.Scores["CustomInstructions"] += Math.Min(understanding, 2);
+                    if (understanding >= 2)
                         AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Copilot correctly interprets custom instructions");
                 }
             }

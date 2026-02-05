@@ -12,7 +12,7 @@ namespace RepoReadiness.Assessors;
 public class TypeSafetyAssessor : IAssessor
 {
     public string CategoryName => "TypeSafety";
-    public int MaxScore => 10;
+    public int MaxScore => 20;
 
     public void Assess()
     {
@@ -21,20 +21,20 @@ public class TypeSafetyAssessor : IAssessor
         bool hasTyping = false;
         bool hasStrictMode = false;
 
-        // Check for TypeScript
+        // Check for TypeScript - increased weight for AI relevance
         var tsConfig = Path.Combine(AssessmentConfig.RepoPath, "tsconfig.json");
         if (File.Exists(tsConfig))
         {
             hasTyping = true;
-            AssessmentConfig.Scores["TypeSafety"] += 4;
+            AssessmentConfig.Scores["TypeSafety"] += 6;
             AssessmentConfig.Findings["TypeSafety"].Strengths.Add("TypeScript configured (tsconfig.json)");
 
-            // Check for strict mode
+            // Check for strict mode - strong typing helps AI significantly
             var content = File.ReadAllText(tsConfig);
             if (content.Contains("\"strict\": true") || content.Contains("\"strict\":true"))
             {
                 hasStrictMode = true;
-                AssessmentConfig.Scores["TypeSafety"] += 3;
+                AssessmentConfig.Scores["TypeSafety"] += 5;
                 AssessmentConfig.Findings["TypeSafety"].Strengths.Add("TypeScript strict mode enabled");
             }
             else
@@ -52,7 +52,7 @@ public class TypeSafetyAssessor : IAssessor
         if (tsFiles.Any() && !hasTyping)
         {
             hasTyping = true;
-            AssessmentConfig.Scores["TypeSafety"] += 3;
+            AssessmentConfig.Scores["TypeSafety"] += 5;
             AssessmentConfig.Findings["TypeSafety"].Strengths.Add($"TypeScript files found ({tsFiles.Count} files)");
         }
 
@@ -62,7 +62,7 @@ public class TypeSafetyAssessor : IAssessor
             double ratio = (double)tsFiles.Count / (tsFiles.Count + jsFiles.Count);
             if (ratio >= 0.8)
             {
-                AssessmentConfig.Scores["TypeSafety"] += 2;
+                AssessmentConfig.Scores["TypeSafety"] += 3;
                 AssessmentConfig.Findings["TypeSafety"].Strengths.Add($"High TypeScript coverage ({ratio:P0})");
             }
             else if (ratio < 0.5)
@@ -71,7 +71,7 @@ public class TypeSafetyAssessor : IAssessor
             }
         }
 
-        // Check for Python type hints
+        // Check for Python type hints - increased weight
         var pyFiles = Directory.GetFiles(AssessmentConfig.RepoPath, "*.py", SearchOption.AllDirectories)
             .Where(f => !f.Contains("venv") && !f.Contains("__pycache__")).Take(10).ToList();
         
@@ -96,12 +96,12 @@ public class TypeSafetyAssessor : IAssessor
             if (filesWithTypeHints >= pyFiles.Count / 2)
             {
                 hasTyping = true;
-                AssessmentConfig.Scores["TypeSafety"] += 4;
+                AssessmentConfig.Scores["TypeSafety"] += 7;
                 AssessmentConfig.Findings["TypeSafety"].Strengths.Add("Python type hints used");
             }
             else if (filesWithTypeHints > 0)
             {
-                AssessmentConfig.Scores["TypeSafety"] += 2;
+                AssessmentConfig.Scores["TypeSafety"] += 3;
                 AssessmentConfig.Findings["TypeSafety"].Strengths.Add("Some Python type hints present");
                 AssessmentConfig.Findings["TypeSafety"].Recommendations.Add("Add type hints to more Python files for better Copilot suggestions");
             }
@@ -122,14 +122,14 @@ public class TypeSafetyAssessor : IAssessor
                         continue;
                     
                     hasStrictMode = true;
-                    AssessmentConfig.Scores["TypeSafety"] += 2;
+                    AssessmentConfig.Scores["TypeSafety"] += 3;
                     AssessmentConfig.Findings["TypeSafety"].Strengths.Add($"Python type checker configured: {checker}");
                     break;
                 }
             }
         }
 
-        // Check for C# nullable reference types
+        // Check for C# nullable reference types - increased weight
         var csprojFiles = Directory.GetFiles(AssessmentConfig.RepoPath, "*.csproj", SearchOption.AllDirectories);
         foreach (var csproj in csprojFiles)
         {
@@ -139,7 +139,7 @@ public class TypeSafetyAssessor : IAssessor
                 if (content.Contains("<Nullable>enable</Nullable>"))
                 {
                     hasTyping = true;
-                    AssessmentConfig.Scores["TypeSafety"] += 4;
+                    AssessmentConfig.Scores["TypeSafety"] += 7;
                     AssessmentConfig.Findings["TypeSafety"].Strengths.Add("C# nullable reference types enabled");
                     break;
                 }

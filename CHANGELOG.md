@@ -1,5 +1,75 @@
 # Changelog
 
+## Version 3.0 - AI-Optimized Scoring Weights (2026-02-05)
+
+### Major Changes
+
+#### 🎯 Reweighted Scoring by AI-Relevance
+
+The scoring system has been completely reweighted to better predict AI coding assistant success. Categories that most directly impact Copilot's ability to generate correct code now have higher weights.
+
+| Category | Old Weight | New Weight | Change | Rationale |
+|----------|------------|------------|--------|-----------|
+| CodeQuality | 30 | 40 | +10 | Most predictive - clean code = AI success |
+| ContextFriendliness | 10 | 25 | +15 | Critical - files that don't fit context = failure |
+| TypeSafety | 10 | 20 | +10 | Types give AI stronger reasoning hints |
+| Test | 20 | 20 | 0 | Unchanged - validation matters |
+| Build | 20 | 15 | -5 | Less critical if code is understandable |
+| Documentation | 25 | 15 | -10 | Helpful but AI can infer from good code |
+| CustomInstructions | 20 | 10 | -10 | Nice-to-have, not essential |
+| Run | 15 | 5 | -10 | Least predictive of coding success |
+
+**Total remains 150 points** (plus 10 bonus points for CustomAgents and AgentSkills)
+
+#### Why This Matters
+
+The previous scoring treated all categories with similar weight. However, empirical testing shows that:
+
+- **A well-structured, type-safe codebase with poor docs** → AI succeeds
+- **A messy codebase with excellent docs** → AI struggles
+
+The new weights reflect this reality:
+- **A/B grade** = AI can solve most problems in this repo
+- **D/F grade** = AI will struggle with basic tasks
+
+### Grade Interpretation
+
+| Grade | Score Range | AI Success Prediction |
+|-------|-------------|----------------------|
+| A | 90%+ (135+/150) | AI can successfully solve most problems |
+| B | 80-89% (120-134/150) | AI can handle most tasks with minor issues |
+| C | 70-79% (105-119/150) | AI will struggle with complex tasks |
+| D | 60-69% (90-104/150) | AI will have difficulty with many tasks |
+| F | <60% (<90/150) | AI cannot reliably solve problems |
+
+### Technical Changes
+
+#### Assessor Updates
+Each assessor's internal point allocations have been proportionally scaled to match their new maximum scores while maintaining the same assessment criteria.
+
+#### Files Modified
+- `Services/ReportGenerator.cs` - Updated `GetMaxScores()` dictionary
+- `Assessors/BuildAssessor.cs` - Scaled 20→15 points
+- `Assessors/RunAssessor.cs` - Scaled 15→5 points
+- `Assessors/CodeUnderstandingAssessor.cs` - Scaled 30→40 points
+- `Assessors/DocumentationAssessor.cs` - Scaled 25→15 points
+- `Assessors/CustomInstructionsAssessor.cs` - Scaled 20→10 points
+- `Assessors/TypeSafetyAssessor.cs` - Scaled 10→20 points
+- `Assessors/ContextFriendlinessAssessor.cs` - Scaled 10→25 points
+
+### Migration Notes
+
+**For Users:**
+- No changes to command-line usage
+- Report format unchanged
+- **Grades may shift** - repos previously rated A may now be B if they relied heavily on documentation over code quality
+
+**For Contributors:**
+- When adding new assessors, consider AI-relevance when assigning weights
+- Higher weights should go to factors that directly impact code generation quality
+
+---
+
 ## Version 2.2 - Copilot SDK Migration (2026-01-27)
 
 ### Major Changes

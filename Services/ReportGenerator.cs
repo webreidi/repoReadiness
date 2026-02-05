@@ -164,16 +164,18 @@ public static class ReportGenerator
 
     private static Dictionary<string, int> GetMaxScores()
     {
+        // Weights optimized for AI coding assistant success prediction
+        // Higher weights for factors most correlated with Copilot effectiveness
         return new Dictionary<string, int>
         {
-            { "Build", 20 },
-            { "Run", 15 },
-            { "Test", 20 },
-            { "CodeQuality", 30 },
-            { "Documentation", 25 },
-            { "CustomInstructions", 20 },
-            { "TypeSafety", 10 },
-            { "ContextFriendliness", 10 }
+            { "Build", 15 },                  // -5: Less critical if code is understandable
+            { "Run", 5 },                     // -10: Least predictive of coding success
+            { "Test", 20 },                   // Unchanged: Validation matters
+            { "CodeQuality", 40 },            // +10: Most predictive - clean code = AI success
+            { "Documentation", 15 },          // -10: Helpful but AI can infer from good code
+            { "CustomInstructions", 10 },     // -10: Nice-to-have, not essential
+            { "TypeSafety", 20 },             // +10: Types give AI stronger reasoning hints
+            { "ContextFriendliness", 25 }     // +15: Critical - files that don't fit context = failure
         };
     }
 

@@ -9,13 +9,13 @@ namespace RepoReadiness.Assessors;
 public class RunAssessor : IAssessor
 {
     public string CategoryName => "Run";
-    public int MaxScore => 15;
+    public int MaxScore => 5;
 
     public void Assess()
     {
         Console.WriteLine("[2/10] Assessing Run Capability...");
 
-        // Check for entry points
+        // Check for entry points (reduced weight - least predictive)
         var entryPatterns = new[] { "Program.cs", "main.py", "index.js", "index.ts", "main.go", "Main.java", "main.rs" };
         bool hasEntryPoint = false;
 
@@ -25,7 +25,7 @@ public class RunAssessor : IAssessor
             if (files.Any())
             {
                 hasEntryPoint = true;
-                AssessmentConfig.Scores["Run"] += 3;
+                AssessmentConfig.Scores["Run"] += 1;
                 AssessmentConfig.Findings["Run"].Strengths.Add($"Entry point identified: {pattern}");
                 break;
             }
@@ -43,7 +43,7 @@ public class RunAssessor : IAssessor
         {
             if (File.Exists(Path.Combine(AssessmentConfig.RepoPath, envFile)))
             {
-                AssessmentConfig.Scores["Run"] += 4;
+                AssessmentConfig.Scores["Run"] += 1;
                 AssessmentConfig.Findings["Run"].Strengths.Add($"Environment template found: {envFile}");
                 break;
             }
@@ -53,7 +53,7 @@ public class RunAssessor : IAssessor
         var launchConfig = Path.Combine(AssessmentConfig.RepoPath, ".vscode", "launch.json");
         if (File.Exists(launchConfig))
         {
-            AssessmentConfig.Scores["Run"] += 2;
+            AssessmentConfig.Scores["Run"] += 1;
             AssessmentConfig.Findings["Run"].Strengths.Add("VS Code launch configuration found");
         }
 
@@ -64,7 +64,7 @@ public class RunAssessor : IAssessor
             var content = File.ReadAllText(packageJson);
             if (content.Contains("\"start\""))
             {
-                AssessmentConfig.Scores["Run"] += 2;
+                AssessmentConfig.Scores["Run"] += 1;
                 AssessmentConfig.Findings["Run"].Strengths.Add("npm start script configured");
             }
         }
@@ -76,8 +76,8 @@ public class RunAssessor : IAssessor
             if (!string.IsNullOrWhiteSpace(response) && !response.StartsWith("Error"))
             {
                 int understanding = CopilotService.EvaluateCopilotUnderstanding(response, "run start execute");
-                AssessmentConfig.Scores["Run"] += Math.Min(understanding, 4);
-                if (understanding >= 3)
+                AssessmentConfig.Scores["Run"] += Math.Min(understanding, 1);
+                if (understanding >= 1)
                     AssessmentConfig.Findings["Run"].Strengths.Add("Copilot understands how to run the application");
             }
         }
