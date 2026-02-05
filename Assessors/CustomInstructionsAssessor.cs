@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using RepoReadiness.Configuration;
 using RepoReadiness.Services;
 
@@ -8,6 +9,7 @@ namespace RepoReadiness.Assessors;
 
 /// <summary>
 /// Assesses custom instructions - these directly tell Copilot how to behave in this repo.
+/// Also detects conflicting instruction files which can cause issues with Copilot.
 /// </summary>
 public class CustomInstructionsAssessor : IAssessor
 {
@@ -18,6 +20,7 @@ public class CustomInstructionsAssessor : IAssessor
     {
         Console.WriteLine("[7/11] Assessing Custom Instructions...");
 
+        // All possible instruction file locations that Copilot may recognize
         var instructionPaths = new[]
         {
             Path.Combine(AssessmentConfig.RepoPath, ".github", "copilot-instructions.md"),
@@ -25,11 +28,28 @@ public class CustomInstructionsAssessor : IAssessor
             Path.Combine(AssessmentConfig.RepoPath, "COPILOT.md")
         };
 
-        string? foundPath = instructionPaths.FirstOrDefault(File.Exists);
+        // Check for conflicting instruction files (multiple files present)
+        var existingFiles = instructionPaths.Where(File.Exists).ToList();
+        
+        if (existingFiles.Count > 1)
+        {
+            // Multiple instruction files detected - this causes problems with Copilot
+            var fileNames = existingFiles.Select(p => Path.GetFileName(p)).ToList();
+            AssessmentConfig.Findings["CustomInstructions"].Weaknesses.Add(
+                $"CONFLICT: Multiple instruction files detected: {string.Join(", ", fileNames)}");
+            AssessmentConfig.Findings["CustomInstructions"].Recommendations.Add(
+                "Remove duplicate instruction files - keep only .github/copilot-instructions.md (recommended)");
+            AssessmentConfig.Findings["CustomInstructions"].Recommendations.Add(
+                "Multiple instruction files can cause unpredictable Copilot behavior and request handling issues");
+        }
+
+        string? foundPath = existingFiles.FirstOrDefault();
 
         if (foundPath != null)
         {
-            AssessmentConfig.Scores["CustomInstructions"] += 4;
+            // Award points but reduce if there are conflicts (penalty of 2 points)
+            int basePoints = existingFiles.Count > 1 ? 2 : 4;
+            AssessmentConfig.Scores["CustomInstructions"] += basePoints;
             AssessmentConfig.Findings["CustomInstructions"].Strengths.Add($"Custom instructions file found: {Path.GetFileName(foundPath)}");
 
             var content = File.ReadAllText(foundPath);
@@ -76,6 +96,12 @@ public class CustomInstructionsAssessor : IAssessor
                 AssessmentConfig.Findings["CustomInstructions"].Strengths.Add("Includes code examples");
             }
 
+            // Check for contradictions between files if multiple exist
+            if (existingFiles.Count > 1)
+            {
+                CheckForContradictions(existingFiles);
+            }
+
             // Copilot understanding test
             if (AssessmentConfig.CopilotAvailable)
             {
@@ -94,6 +120,51 @@ public class CustomInstructionsAssessor : IAssessor
             AssessmentConfig.Findings["CustomInstructions"].Weaknesses.Add("No custom instructions file found");
             AssessmentConfig.Findings["CustomInstructions"].Recommendations.Add("Create .github/copilot-instructions.md with project-specific guidance");
             AssessmentConfig.Findings["CustomInstructions"].Recommendations.Add("Include: coding standards, naming conventions, testing practices, security guidelines");
+        }
+    }
+
+    /// <summary>
+    /// Checks for potential contradictions between multiple instruction files.
+    /// </summary>
+    private static void CheckForContradictions(List<string> files)
+    {
+        try
+        {
+            var contents = files.Select(f => (Path: f, Content: File.ReadAllText(f))).ToList();
+            
+            // Check for conflicting patterns (simple heuristic checks)
+            var conflictIndicators = new[]
+            {
+                ("tabs", "spaces"),
+                ("single quotes", "double quotes"),
+                ("camelCase", "PascalCase"),
+                ("snake_case", "camelCase"),
+                ("async/await", "callbacks"),
+                ("classes", "functions")
+            };
+
+            foreach (var (term1, term2) in conflictIndicators)
+            {
+                if (contents.Count >= 2)
+                {
+                    bool file1HasTerm1 = contents[0].Content.Contains(term1, StringComparison.OrdinalIgnoreCase);
+                    bool file1HasTerm2 = contents[0].Content.Contains(term2, StringComparison.OrdinalIgnoreCase);
+                    bool file2HasTerm1 = contents[1].Content.Contains(term1, StringComparison.OrdinalIgnoreCase);
+                    bool file2HasTerm2 = contents[1].Content.Contains(term2, StringComparison.OrdinalIgnoreCase);
+
+                    // Potential conflict: one file mentions term1, other mentions term2 (but not both)
+                    if ((file1HasTerm1 && file2HasTerm2 && !file1HasTerm2 && !file2HasTerm1) ||
+                        (file1HasTerm2 && file2HasTerm1 && !file1HasTerm1 && !file2HasTerm2))
+                    {
+                        AssessmentConfig.Findings["CustomInstructions"].Weaknesses.Add(
+                            $"Potential conflict: '{term1}' vs '{term2}' mentioned in different files");
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Silently ignore errors in contradiction detection
         }
     }
 }
