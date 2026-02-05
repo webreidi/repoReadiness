@@ -12,28 +12,28 @@ namespace RepoReadiness.Assessors;
 public class DocumentationAssessor : IAssessor
 {
     public string CategoryName => "Documentation";
-    public int MaxScore => 25;
+    public int MaxScore => 15;
 
     public void Assess()
     {
         Console.WriteLine("[5/10] Assessing Documentation Quality...");
 
-        // Check README - expanded scoring
+        // Check README - scaled for max 15 points
         var readmePath = Path.Combine(AssessmentConfig.RepoPath, "README.md");
         if (File.Exists(readmePath))
         {
             var content = File.ReadAllText(readmePath);
             var lines = content.Split('\n').Length;
 
-            // Base score for README presence and length
+            // Base score for README presence and length (scaled down)
             if (lines >= 100)
             {
-                AssessmentConfig.Scores["Documentation"] += 6;
+                AssessmentConfig.Scores["Documentation"] += 4;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add("Comprehensive README.md (100+ lines)");
             }
             else if (lines >= 50)
             {
-                AssessmentConfig.Scores["Documentation"] += 4;
+                AssessmentConfig.Scores["Documentation"] += 3;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add("Good README.md coverage");
             }
             else if (lines >= 20)
@@ -53,7 +53,7 @@ public class DocumentationAssessor : IAssessor
             int sectionsFound = keySections.Count(s => content.Contains(s, StringComparison.OrdinalIgnoreCase));
             if (sectionsFound >= 4)
             {
-                AssessmentConfig.Scores["Documentation"] += 3;
+                AssessmentConfig.Scores["Documentation"] += 2;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add($"README covers {sectionsFound} key sections");
             }
             else if (sectionsFound >= 2)
@@ -73,7 +73,7 @@ public class DocumentationAssessor : IAssessor
         {
             if (Directory.Exists(Path.Combine(AssessmentConfig.RepoPath, dir)))
             {
-                AssessmentConfig.Scores["Documentation"] += 3;
+                AssessmentConfig.Scores["Documentation"] += 2;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add($"Documentation directory found: {dir}/");
                 break;
             }
@@ -86,12 +86,12 @@ public class DocumentationAssessor : IAssessor
 
         if (mdFiles.Count >= 3)
         {
-            AssessmentConfig.Scores["Documentation"] += 3;
+            AssessmentConfig.Scores["Documentation"] += 2;
             AssessmentConfig.Findings["Documentation"].Strengths.Add($"Rich documentation: {string.Join(", ", mdFiles.Select(Path.GetFileName).Take(3))}");
         }
         else if (mdFiles.Count >= 1)
         {
-            AssessmentConfig.Scores["Documentation"] += 2;
+            AssessmentConfig.Scores["Documentation"] += 1;
             AssessmentConfig.Findings["Documentation"].Strengths.Add($"Additional docs: {string.Join(", ", mdFiles.Select(Path.GetFileName))}");
         }
 
@@ -102,7 +102,7 @@ public class DocumentationAssessor : IAssessor
             var files = Directory.GetFiles(AssessmentConfig.RepoPath, apiDoc, SearchOption.AllDirectories);
             if (files.Any())
             {
-                AssessmentConfig.Scores["Documentation"] += 3;
+                AssessmentConfig.Scores["Documentation"] += 1;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add($"API documentation found: {apiDoc}");
                 break;
             }
@@ -114,7 +114,7 @@ public class DocumentationAssessor : IAssessor
         {
             if (File.Exists(Path.Combine(AssessmentConfig.RepoPath, archDoc)))
             {
-                AssessmentConfig.Scores["Documentation"] += 2;
+                AssessmentConfig.Scores["Documentation"] += 1;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add($"Architecture documentation: {archDoc}");
                 break;
             }
@@ -143,12 +143,12 @@ public class DocumentationAssessor : IAssessor
         {
             if (filesWithXmlDocs >= codeFiles.Count / 2)
             {
-                AssessmentConfig.Scores["Documentation"] += 3;
+                AssessmentConfig.Scores["Documentation"] += 2;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add("XML documentation comments present");
             }
             else if (filesWithComments >= codeFiles.Count / 2)
             {
-                AssessmentConfig.Scores["Documentation"] += 2;
+                AssessmentConfig.Scores["Documentation"] += 1;
                 AssessmentConfig.Findings["Documentation"].Strengths.Add("Code contains inline comments");
             }
             else

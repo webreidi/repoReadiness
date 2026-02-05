@@ -14,20 +14,20 @@ namespace RepoReadiness.Assessors;
 public class CodeQualityAssessor : IAssessor
 {
     public string CategoryName => "CodeQuality";
-    public int MaxScore => 30;
+    public int MaxScore => 40;
 
     public void Assess()
     {
         Console.WriteLine("[4/10] Assessing Code Quality...");
 
-        // Check directory structure (not too flat, not too deep)
+        // Check directory structure (not too flat, not too deep) - increased weight
         var allDirs = Directory.GetDirectories(AssessmentConfig.RepoPath, "*", SearchOption.AllDirectories)
             .Where(d => !d.Contains("node_modules") && !d.Contains(".git") && !d.Contains("bin") && !d.Contains("obj"))
             .ToList();
 
         if (allDirs.Count >= 3 && allDirs.Count <= 50)
         {
-            AssessmentConfig.Scores["CodeQuality"] += 5;
+            AssessmentConfig.Scores["CodeQuality"] += 7;
             AssessmentConfig.Findings["CodeQuality"].Strengths.Add("Well-organized directory structure");
         }
         else if (allDirs.Count < 3)
@@ -36,11 +36,11 @@ public class CodeQualityAssessor : IAssessor
         }
         else
         {
-            AssessmentConfig.Scores["CodeQuality"] += 2;
+            AssessmentConfig.Scores["CodeQuality"] += 3;
             AssessmentConfig.Findings["CodeQuality"].Weaknesses.Add("Complex directory structure may be hard to navigate");
         }
 
-        // Check for oversized files (Copilot struggles with large files)
+        // Check for oversized files (Copilot struggles with large files) - increased weight
         var codeExtensions = new[] { ".cs", ".js", ".ts", ".py", ".java", ".go", ".rs" };
         var largeFiles = new List<string>();
         var allCodeFiles = new List<string>();
@@ -64,7 +64,7 @@ public class CodeQualityAssessor : IAssessor
 
         if (largeFiles.Count == 0)
         {
-            AssessmentConfig.Scores["CodeQuality"] += 5;
+            AssessmentConfig.Scores["CodeQuality"] += 7;
             AssessmentConfig.Findings["CodeQuality"].Strengths.Add("No oversized files detected (all <500 lines)");
         }
         else
@@ -73,7 +73,7 @@ public class CodeQualityAssessor : IAssessor
             AssessmentConfig.Findings["CodeQuality"].Recommendations.Add("Consider splitting large files into smaller modules for better Copilot context");
         }
 
-        // Check for consistent naming conventions
+        // Check for consistent naming conventions - increased weight
         var csFiles = Directory.GetFiles(AssessmentConfig.RepoPath, "*.cs", SearchOption.AllDirectories)
             .Where(f => !f.Contains("obj") && !f.Contains("bin")).Take(10).ToList();
         if (csFiles.Any())
@@ -81,24 +81,24 @@ public class CodeQualityAssessor : IAssessor
             bool hasPascalCase = csFiles.All(f => char.IsUpper(Path.GetFileNameWithoutExtension(f)[0]));
             if (hasPascalCase)
             {
-                AssessmentConfig.Scores["CodeQuality"] += 4;
+                AssessmentConfig.Scores["CodeQuality"] += 5;
                 AssessmentConfig.Findings["CodeQuality"].Strengths.Add("Consistent PascalCase naming for C# files");
             }
         }
 
-        // Check for linting/formatting configuration
+        // Check for linting/formatting configuration - increased weight
         var lintConfigs = new[] { ".eslintrc", ".eslintrc.js", ".eslintrc.json", ".editorconfig", ".prettierrc", "stylecop.json", ".globalconfig" };
         foreach (var config in lintConfigs)
         {
             if (File.Exists(Path.Combine(AssessmentConfig.RepoPath, config)))
             {
-                AssessmentConfig.Scores["CodeQuality"] += 4;
+                AssessmentConfig.Scores["CodeQuality"] += 6;
                 AssessmentConfig.Findings["CodeQuality"].Strengths.Add($"Code style enforced: {config}");
                 break;
             }
         }
 
-        // Check for clear separation of concerns (services/models/controllers pattern)
+        // Check for clear separation of concerns (services/models/controllers pattern) - increased weight
         var separationDirs = new[] { "Services", "Models", "Controllers", "Repositories", "Handlers", "src", "lib" };
         int foundSeparation = 0;
         foreach (var dir in separationDirs)
@@ -108,11 +108,11 @@ public class CodeQualityAssessor : IAssessor
         }
         if (foundSeparation >= 2)
         {
-            AssessmentConfig.Scores["CodeQuality"] += 4;
+            AssessmentConfig.Scores["CodeQuality"] += 5;
             AssessmentConfig.Findings["CodeQuality"].Strengths.Add("Clear separation of concerns (organized folders)");
         }
 
-        // Check function/method sizes (sample analysis)
+        // Check function/method sizes (sample analysis) - increased weight
         int wellSizedMethods = 0;
         int oversizedMethods = 0;
         foreach (var file in allCodeFiles.Take(5))
@@ -141,7 +141,7 @@ public class CodeQualityAssessor : IAssessor
         }
         if (wellSizedMethods > oversizedMethods && wellSizedMethods > 0)
         {
-            AssessmentConfig.Scores["CodeQuality"] += 4;
+            AssessmentConfig.Scores["CodeQuality"] += 5;
             AssessmentConfig.Findings["CodeQuality"].Strengths.Add("Methods are reasonably sized (<50 lines)");
         }
         else if (oversizedMethods > 0)
@@ -149,7 +149,7 @@ public class CodeQualityAssessor : IAssessor
             AssessmentConfig.Findings["CodeQuality"].Recommendations.Add("Consider breaking up large methods for better Copilot suggestions");
         }
 
-        // Check import organization (are imports at top of files?)
+        // Check import organization (are imports at top of files?) - increased weight
         int organizedImports = 0;
         foreach (var file in allCodeFiles.Take(5))
         {
@@ -179,7 +179,7 @@ public class CodeQualityAssessor : IAssessor
         }
         if (organizedImports >= 3)
         {
-            AssessmentConfig.Scores["CodeQuality"] += 4;
+            AssessmentConfig.Scores["CodeQuality"] += 5;
             AssessmentConfig.Findings["CodeQuality"].Strengths.Add("Well-organized imports at file tops");
         }
     }

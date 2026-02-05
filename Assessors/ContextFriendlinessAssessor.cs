@@ -13,7 +13,7 @@ namespace RepoReadiness.Assessors;
 public class ContextFriendlinessAssessor : IAssessor
 {
     public string CategoryName => "ContextFriendliness";
-    public int MaxScore => 10;
+    public int MaxScore => 25;
 
     public void Assess()
     {
@@ -50,14 +50,15 @@ public class ContextFriendlinessAssessor : IAssessor
             int filesUnder300 = fileSizes.Count(s => s <= 300);
             double pctUnder300 = (double)filesUnder300 / fileSizes.Count;
 
+            // File size scoring - critical for AI context window (increased weight)
             if (avgSize <= 200)
             {
-                AssessmentConfig.Scores["ContextFriendliness"] += 3;
+                AssessmentConfig.Scores["ContextFriendliness"] += 8;
                 AssessmentConfig.Findings["ContextFriendliness"].Strengths.Add($"Excellent file sizes (avg {avgSize:F0} lines)");
             }
             else if (avgSize <= 300)
             {
-                AssessmentConfig.Scores["ContextFriendliness"] += 2;
+                AssessmentConfig.Scores["ContextFriendliness"] += 5;
                 AssessmentConfig.Findings["ContextFriendliness"].Strengths.Add($"Good file sizes (avg {avgSize:F0} lines)");
             }
             else
@@ -68,12 +69,12 @@ public class ContextFriendlinessAssessor : IAssessor
 
             if (pctUnder300 >= 0.8)
             {
-                AssessmentConfig.Scores["ContextFriendliness"] += 1;
+                AssessmentConfig.Scores["ContextFriendliness"] += 3;
                 AssessmentConfig.Findings["ContextFriendliness"].Strengths.Add($"{pctUnder300:P0} of files are under 300 lines");
             }
         }
 
-        // Check .gitignore configuration
+        // Check .gitignore configuration - increased weight
         var gitignorePath = Path.Combine(AssessmentConfig.RepoPath, ".gitignore");
         if (File.Exists(gitignorePath))
         {
@@ -83,12 +84,12 @@ public class ContextFriendlinessAssessor : IAssessor
 
             if (excludesFound >= 3)
             {
-                AssessmentConfig.Scores["ContextFriendliness"] += 2;
+                AssessmentConfig.Scores["ContextFriendliness"] += 4;
                 AssessmentConfig.Findings["ContextFriendliness"].Strengths.Add(".gitignore properly configured");
             }
             else
             {
-                AssessmentConfig.Scores["ContextFriendliness"] += 1;
+                AssessmentConfig.Scores["ContextFriendliness"] += 2;
                 AssessmentConfig.Findings["ContextFriendliness"].Recommendations.Add("Ensure .gitignore excludes build artifacts and dependencies");
             }
         }
@@ -98,15 +99,15 @@ public class ContextFriendlinessAssessor : IAssessor
             AssessmentConfig.Findings["ContextFriendliness"].Recommendations.Add("Add .gitignore to exclude build artifacts and dependencies");
         }
 
-        // Check for .copilotignore (bonus)
+        // Check for .copilotignore - important for focused context
         var copilotIgnorePath = Path.Combine(AssessmentConfig.RepoPath, ".copilotignore");
         if (File.Exists(copilotIgnorePath))
         {
-            AssessmentConfig.Scores["ContextFriendliness"] += 2;
+            AssessmentConfig.Scores["ContextFriendliness"] += 4;
             AssessmentConfig.Findings["ContextFriendliness"].Strengths.Add(".copilotignore configured for focused context");
         }
 
-        // Check for minified/bundled files in source
+        // Check for minified/bundled files in source - increased weight
         var problematicFiles = new List<string>();
         var minPatterns = new[] { "*.min.js", "*.bundle.js", "*.min.css" };
         foreach (var pattern in minPatterns)
@@ -122,7 +123,7 @@ public class ContextFriendlinessAssessor : IAssessor
 
         if (!problematicFiles.Any())
         {
-            AssessmentConfig.Scores["ContextFriendliness"] += 1;
+            AssessmentConfig.Scores["ContextFriendliness"] += 3;
             AssessmentConfig.Findings["ContextFriendliness"].Strengths.Add("No minified/bundled files in source");
         }
         else
@@ -131,7 +132,7 @@ public class ContextFriendlinessAssessor : IAssessor
             AssessmentConfig.Findings["ContextFriendliness"].Recommendations.Add("Move minified files to dist/ or exclude from Copilot context");
         }
 
-        // Check for reasonable directory depth
+        // Check for reasonable directory depth - increased weight
         try
         {
             var allFiles = Directory.GetFiles(AssessmentConfig.RepoPath, "*.*", SearchOption.AllDirectories)
@@ -147,7 +148,7 @@ public class ContextFriendlinessAssessor : IAssessor
 
             if (maxDepth <= 5)
             {
-                AssessmentConfig.Scores["ContextFriendliness"] += 1;
+                AssessmentConfig.Scores["ContextFriendliness"] += 3;
                 AssessmentConfig.Findings["ContextFriendliness"].Strengths.Add($"Reasonable directory depth (max {maxDepth} levels)");
             }
             else
