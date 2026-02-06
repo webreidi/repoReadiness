@@ -266,5 +266,60 @@ public static class ReportGenerator
         else
             Console.WriteLine($"Total Score: {total}/{max} ({grade})");
         Console.WriteLine();
+
+        // Display code complexity metrics from findings
+        DisplayCodeComplexityMetrics();
+    }
+
+    private static void DisplayCodeComplexityMetrics()
+    {
+        Console.WriteLine("Code Complexity:");
+        
+        var codeQualityFindings = AssessmentConfig.Findings["CodeQuality"];
+        var contextFindings = AssessmentConfig.Findings["ContextFriendliness"];
+        
+        // Collect unique metrics to display
+        var displayedMetrics = new HashSet<string>();
+
+        // Look for file size metrics from ContextFriendliness (avg file sizes)
+        var fileSizeMetric = contextFindings.Strengths
+            .Concat(contextFindings.Weaknesses)
+            .FirstOrDefault(f => f.Contains("file size", StringComparison.OrdinalIgnoreCase) || 
+                                  f.Contains("avg", StringComparison.OrdinalIgnoreCase));
+        if (fileSizeMetric != null) displayedMetrics.Add(fileSizeMetric);
+        
+        // Look for oversized files metric from CodeQuality
+        var oversizedMetric = codeQualityFindings.Strengths
+            .Concat(codeQualityFindings.Weaknesses)
+            .FirstOrDefault(f => f.Contains("oversized", StringComparison.OrdinalIgnoreCase) ||
+                                  f.Contains("Large files", StringComparison.OrdinalIgnoreCase));
+        if (oversizedMetric != null) displayedMetrics.Add(oversizedMetric);
+        
+        // Look for method size metrics
+        var methodMetric = codeQualityFindings.Strengths
+            .Concat(codeQualityFindings.Weaknesses)
+            .FirstOrDefault(f => f.Contains("method", StringComparison.OrdinalIgnoreCase) ||
+                                  f.Contains("Method", StringComparison.OrdinalIgnoreCase));
+        if (methodMetric != null) displayedMetrics.Add(methodMetric);
+
+        // Look for directory structure
+        var structureMetric = codeQualityFindings.Strengths
+            .Concat(codeQualityFindings.Weaknesses)
+            .FirstOrDefault(f => f.Contains("directory structure", StringComparison.OrdinalIgnoreCase));
+        if (structureMetric != null) displayedMetrics.Add(structureMetric);
+
+        // Display collected metrics
+        if (displayedMetrics.Any())
+        {
+            foreach (var metric in displayedMetrics)
+            {
+                Console.WriteLine($"  • {metric}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("  • No complexity metrics available");
+        }
+        Console.WriteLine();
     }
 }
