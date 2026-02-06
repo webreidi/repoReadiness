@@ -18,7 +18,7 @@ public class AgentSkillsAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[10/10] Assessing Agent Skills (Bonus)...");
+        Console.WriteLine("[11/11] Assessing Agent Skills (Bonus)...");
 
         var skillIndicators = new[] { "SKILL.md", "skill.yaml", "skill.yml", "*.skill.md" };
         var foundSkills = new List<string>();

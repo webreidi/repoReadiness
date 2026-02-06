@@ -13,7 +13,7 @@ public class RunAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[2/10] Assessing Run Capability...");
+        Console.WriteLine("[2/11] Assessing Run Capability...");
 
         // Check for entry points
         var entryPatterns = new[] { "Program.cs", "main.py", "index.js", "index.ts", "main.go", "Main.java", "main.rs" };

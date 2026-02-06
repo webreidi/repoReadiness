@@ -18,7 +18,7 @@ public class CustomInstructionsAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[6/10] Assessing Custom Instructions...");
+        Console.WriteLine("[7/11] Assessing Custom Instructions...");
 
         // All possible instruction file locations that Copilot may recognize
         var instructionPaths = new[]

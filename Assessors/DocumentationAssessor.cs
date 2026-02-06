@@ -16,7 +16,7 @@ public class DocumentationAssessor : IAssessor
 
     public void Assess()
     {
-        Console.WriteLine("[5/10] Assessing Documentation Quality...");
+        Console.WriteLine("[6/11] Assessing Documentation Quality...");
 
         // Check README - expanded scoring
         var readmePath = Path.Combine(AssessmentConfig.RepoPath, "README.md");
